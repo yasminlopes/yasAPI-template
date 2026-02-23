@@ -253,6 +253,24 @@ Em desenvolvimento, deixe `API_SECRET` vazio para não exigir o header.
 
 ---
 
+## Validação com Zod
+
+O body das rotas é validado com **Zod**. Em cada módulo, os schemas ficam em `*.schema.ts` (ex.: `loginBodySchema`, `createUserBodySchema`). Em caso de falha, a API responde 400 com código `ValidationError` e a mensagem do primeiro erro (ex.: "Email inválido"). Helper em `shared/helpers/validation` (`validateOrThrow`, `formatZodError`).
+
+---
+
+## Request ID
+
+Toda requisição recebe um **`X-Request-Id`** na resposta. Se o cliente enviar esse header, o mesmo valor é repassado; caso contrário, é gerado um UUID. Útil para correlacionar logs e erros. Plugin em `app/plugins/request-id.ts`.
+
+---
+
+## Helmet (headers de segurança)
+
+O **@fastify/helmet** adiciona headers de segurança (X-Content-Type-Options, X-Frame-Options, etc.). Registrado em `app/plugins/helmet.ts` com `contentSecurityPolicy: false` para evitar conflitos com Swagger; pode ser ajustado em produção.
+
+---
+
 ## Feature flags
 
 Em `core/config/features.ts`: flags por ambiente (ex.: `swagger` só em dev, `seedAllowed` em dev). Use para ligar/desligar Swagger, seeds ou outros comportamentos.

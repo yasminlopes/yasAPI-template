@@ -1,18 +1,8 @@
-export const loginBodySchema = {
-  type: 'object',
-  required: ['email', 'password'],
-  properties: {
-    email: { type: 'string', format: 'email' },
-    password: { type: 'string', minLength: 1 },
-  },
-} as const;
+import { z } from 'zod';
 
-export const registerBodySchema = {
-  type: 'object',
-  required: ['email', 'password', 'name'],
-  properties: {
-    email: { type: 'string', format: 'email' },
-    password: { type: 'string', minLength: 6 },
-    name: { type: 'string', minLength: 1 },
-  },
-} as const;
+export const loginBodySchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(1, 'Senha obrigatória'),
+});
+
+export type LoginBody = z.infer<typeof loginBodySchema>;

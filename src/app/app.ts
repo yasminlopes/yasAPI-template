@@ -4,6 +4,8 @@ import jwtPlugin from '@app/plugins/jwt';
 import corsPlugin from '@app/plugins/cors';
 import swaggerPlugin from '@app/plugins/swagger';
 import rateLimitPlugin from '@app/plugins/rate-limit';
+import helmetPlugin from '@app/plugins/helmet';
+import { requestIdPlugin } from '@app/plugins/request-id';
 import { apiKeyMiddleware } from '@shared/middlewares';
 import { registerRoutes } from '@app/routes';
 import { errorHandler } from '@app/error-handler';
@@ -15,8 +17,10 @@ export async function buildApp() {
       : true,
   });
 
+  await app.register(helmetPlugin);
   await app.register(corsPlugin);
   await app.register(rateLimitPlugin);
+  await app.register(requestIdPlugin);
   if (env.apiSecret) {
     app.addHook('onRequest', apiKeyMiddleware);
   }

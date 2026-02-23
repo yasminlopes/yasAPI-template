@@ -29,10 +29,12 @@
     "@fastify/rate-limit": "^9.1.0",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^2.0.0",
+    "@fastify/helmet": "^11.1.0",
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
     "pino": "^9.4.0",
-    "pino-pretty": "^11.3.0"
+    "pino-pretty": "^11.3.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "tsc-alias": "^1.8.10",

@@ -4,19 +4,19 @@ import { loginBodySchema } from '@modules/auth/auth.schema';
 import { sendOk } from '@core/http/response';
 import { UnauthorizedError, NotFoundError } from '@core/http/errors';
 import { authMiddleware } from '@shared/middlewares';
+import { validateOrThrow } from '@shared/helpers/validation';
 
 export async function authRoutes(app: FastifyInstance) {
   /** Público: login (rate limit 3 tentativas / 15 min aplicado no service) */
-  app.post<{ Body: { email: string; password: string } }>(
-    '/login',
-    { schema: { body: loginBodySchema } },
-    async (request, reply) => {
-      const result = await authService.login(request.body.email, request.body.password);
-      if (!result) throw new UnauthorizedError('Credenciais inválidas');
-      const token = app.jwt.sign({ sub: result.user.id } as { sub: string });
-      return sendOk(reply, { token, user: result.user });
-    }
-  );
+  app.post('/login', async (request, reply) => {
+    const parsed = loginBodySchema.safeParse(request.body);
+    if (!parsed.success) validateOrThrow(parsed.error);
+    const { email, password } = parsed.data;
+    const result = await authService.login(email, password);
+    if (!result) throw new UnauthorizedError('Credenciais inválidas');
+    const token = app.jwt.sign({ sub: result.user.id } as { sub: string });
+    return sendOk(reply, { token, user: result.user });
+  });
 
   /** Autenticado (exemplo): perfil do usuário logado */
   app.get('/me', { onRequest: [authMiddleware] }, async (request, reply) => {
