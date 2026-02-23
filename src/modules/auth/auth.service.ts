@@ -6,30 +6,29 @@ import {
   clearAttempts,
   getRemainingBlockMs,
 } from '@core/utils/login-rate-limit';
-import { TooManyRequestsError } from '@core/http/errors';
+import { InvalidCredentialsError, LoginBlockedError, UserNotFoundError } from '@core/domain';
 
 export const authService = {
   async login(
     email: string,
     password: string
-  ): Promise<{ user: { id: string; email: string; name: string } } | null> {
+  ): Promise<{ user: { id: string; email: string; name: string } }> {
     const key = email.toLowerCase().trim();
     if (isBlocked(key)) {
       const remainingMs = getRemainingBlockMs(key);
-      throw new TooManyRequestsError(
-        `Muitas tentativas. Tente novamente em ${Math.ceil(remainingMs / 60000)} minuto(s).`,
-        'TooManyRequests'
+      throw new LoginBlockedError(
+        `Muitas tentativas. Tente novamente em ${Math.ceil(remainingMs / 60000)} minuto(s).`
       );
     }
     const user = await authRepository.findByEmail(email);
     if (!user) {
       recordFailedAttempt(key);
-      return null;
+      throw new InvalidCredentialsError();
     }
     const passwordHash = hash(password);
     if (user.passwordHash !== passwordHash) {
       recordFailedAttempt(key);
-      return null;
+      throw new InvalidCredentialsError();
     }
     clearAttempts(key);
     return { user: { id: user.id, email: user.email, name: user.name } };
@@ -37,7 +36,7 @@ export const authService = {
 
   async getProfile(userId: string) {
     const user = await authRepository.findById(userId);
-    if (!user) return null;
+    if (!user) throw new UserNotFoundError();
     return { id: user.id, email: user.email, name: user.name };
   },
 };

@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import { authService } from '@modules/auth/auth.service';
 import { loginBodySchema } from '@modules/auth/auth.schema';
 import { sendOk } from '@core/http/response';
-import { UnauthorizedError, NotFoundError } from '@core/http/errors';
 import { authMiddleware } from '@shared/middlewares';
 import { validateOrThrow } from '@shared/helpers/validation';
 
@@ -13,7 +12,6 @@ export async function authRoutes(app: FastifyInstance) {
     if (!parsed.success) validateOrThrow(parsed.error);
     const { email, password } = parsed.data;
     const result = await authService.login(email, password);
-    if (!result) throw new UnauthorizedError('Credenciais inválidas');
     const token = app.jwt.sign({ sub: result.user.id } as { sub: string });
     return sendOk(reply, { token, user: result.user });
   });
@@ -22,7 +20,6 @@ export async function authRoutes(app: FastifyInstance) {
   app.get('/me', { onRequest: [authMiddleware] }, async (request, reply) => {
     const userId = (request as { userId?: string }).userId;
     const profile = await authService.getProfile(userId!);
-    if (!profile) throw new NotFoundError('Usuário não encontrado');
     return sendOk(reply, profile);
   });
 }
