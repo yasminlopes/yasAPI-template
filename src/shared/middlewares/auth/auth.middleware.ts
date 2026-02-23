@@ -6,7 +6,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   try {
     await request.jwtVerify();
     const payload = request.user as { sub: string };
-    request.userId = payload.sub;
+    (request as { userId?: string }).userId = payload.sub;
   } catch {
     const err = new UnauthorizedError('Token inválido ou expirado', 'Unauthorized');
     return sendError(reply, err.statusCode, err.message, err.code);

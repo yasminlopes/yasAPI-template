@@ -16,5 +16,6 @@ export const env = {
   host: optional('HOST', '0.0.0.0'),
   jwtSecret: optional('JWT_SECRET', 'dev-secret-change-in-production'),
   databaseUrl: optional('DATABASE_URL', ''),
+  apiSecret: optional('API_SECRET', ''),
   isDev: process.env.NODE_ENV !== 'production',
 } as const;

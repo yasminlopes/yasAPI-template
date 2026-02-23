@@ -3,10 +3,7 @@ import type { PaginationQuery, PaginatedResult } from './types';
 
 export function normalizePagination(query: PaginationQuery): { page: number; limit: number } {
   const page = Math.max(1, Number(query.page) || 1);
-  const limit = Math.min(
-    MAX_PAGE_SIZE,
-    Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE)
-  );
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(query.limit) || DEFAULT_PAGE_SIZE));
   return { page, limit };
 }
 

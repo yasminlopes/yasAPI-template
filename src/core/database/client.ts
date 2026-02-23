@@ -39,3 +39,16 @@ export async function disconnectDatabase(): Promise<void> {
     logger.info('Database disconnected');
   }
 }
+
+export type DatabaseHealth = 'ok' | 'down' | 'unconfigured';
+
+export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
+  if (!env.databaseUrl) return 'unconfigured';
+  try {
+    const db = getPrisma();
+    await db.$queryRaw`SELECT 1`;
+    return 'ok';
+  } catch {
+    return 'down';
+  }
+}

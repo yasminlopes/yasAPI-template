@@ -42,8 +42,9 @@ Onde o servidor Fastify é montado e onde ficam **plugins** e **rotas**.
 Tudo que é transversal à aplicação: config, banco, HTTP (tipos/erros/respostas) e utilitários.
 
 - **`config/`**
-  - **`env.ts`** — Lê variáveis de ambiente (PORT, JWT_SECRET, DATABASE_URL, etc.).
-  - **`index.ts`** — Reexporta `env` (e `requiredEnv` quando precisar de env obrigatório).
+  - **`env.ts`** — Lê variáveis de ambiente (PORT, JWT_SECRET, DATABASE_URL, API_SECRET, etc.).
+  - **`features.ts`** — Feature flags por ambiente (ex.: Swagger só em dev).
+  - **`index.ts`** — Reexporta `env` e `features`.
 
 - **`database/`**
   - **`client.ts`** — Cliente Prisma: `getPrisma()`, `connectDatabase()`, `disconnectDatabase()`, `hasDatabase()`.
@@ -73,12 +74,14 @@ Cada módulo é um “bounded context”: **routes** (HTTP), **service** (lógic
   - **`auth.service.ts`** — Login (com rate limit 3 tentativas / 15 min), `getProfile`.
   - **`auth.repository.ts`** — Acesso a usuário por email/id (Prisma).
   - **`auth.schema.ts`** — JSON Schema do body de login (e outros que precisar).
+  - **`dto/`** — Tipos de resposta do domínio auth (ex.: `LoginResponse`, `ProfileResponse`).
 
 - **`users/`**
   - **`users.routes.ts`** — `POST /` (criar conta — rota pública).
   - **`users.service.ts`** — Criar usuário (hash de senha, verificação de email já existente).
   - **`users.repository.ts`** — Create e findByEmail (Prisma).
   - **`users.schema.ts`** — Schema do body de criação de usuário.
+  - **`dto/`** — Tipos de resposta do domínio users (ex.: `UserResponse`, `UserCreateResponse`).
 
 Para novos módulos (game, store, achievements): crie uma pasta em `modules/` com o mesmo padrão (routes, service, repository, schema) e registre as rotas em `app/routes.ts`.
 
@@ -91,7 +94,8 @@ Para novos módulos (game, store, achievements): crie uma pasta em `modules/` co
 Coisas usadas por vários módulos ou pela app, sem pertencer a um domínio só. Cada conceito em sua própria pasta para facilitar testes e evolução.
 
 - **`middlewares/`** — Um middleware por pasta:
-  - **`auth/`** — `auth.middleware.ts` (verifica JWT, anexa `request.userId`), `index.ts`. Uso: `onRequest: [authMiddleware]`.
+  - **`auth/`** — Verifica JWT e anexa `request.userId`. Uso: `onRequest: [authMiddleware]`.
+  - **`api-key/`** — Exige header `X-API-Key` quando `API_SECRET` está definido (rota `/health` isenta).
 
 - **`validators/`** — Um validator por pasta:
   - **`token/`** — `token.validator.ts` (`isBearerToken`, `extractBearerToken`), `index.ts`.
@@ -102,11 +106,11 @@ Coisas usadas por vários módulos ou pela app, sem pertencer a um domínio só.
 - **`enums/`** — Enums organizados por contexto:
   - **`http/`** — `status.ts` (`HttpStatus`), `error-codes.ts` (`HttpErrorCode`), `index.ts`.
 
-- **`types/`** — `global.d.ts` (ex.: `FastifyRequest.userId`).
+- **`types/`** — Tipos compartilhados entre módulos (quando fizer sentido).
 
 - **`constants/`** — Constantes globais (ex.: `API_PREFIX`, `DEFAULT_PAGE_SIZE`, `MAX_PAGE_SIZE`).
 
-**Resumo:** em `shared/` nada fica solto; cada middleware, validator ou helper vive em sua pasta, o que facilita testes e manutenção.
+**Resumo:** em `shared/` nada fica solto; cada middleware, validator ou helper vive em sua pasta. DTOs e tipos de resposta da API ficam **dentro de cada módulo** (ex.: `modules/auth/dto/`, `modules/users/dto/`), para manter tudo do domínio no mesmo lugar.
 
 ---
 
@@ -114,7 +118,7 @@ Coisas usadas por vários módulos ou pela app, sem pertencer a um domínio só.
 
 | Método | Rota | Autenticação | Descrição |
 |--------|------|--------------|-----------|
-| GET | `/health` | Não | Health check |
+| GET | `/health` | Não (sempre isento de API key) | Health check (status app + DB); 200 ok, 503 degraded |
 | POST | `/api/v1/users` | Não | Criar conta (público) |
 | POST | `/api/v1/auth/login` | Não | Login (rate limit: 3 tentativas / 15 min) |
 | GET | `/api/v1/auth/me` | Sim (Bearer) | Perfil do usuário logado (exemplo de rota autenticada) |
@@ -161,10 +165,10 @@ cp .env.example .env
 # Ajuste DATABASE_URL se precisar (padrão: postgresql://postgres:postgres@localhost:5432/yasapi)
 
 docker compose -f docker-compose.dev.yml up -d   # sobe só o Postgres
-npm install
-npm run db:generate
-npm run db:migrate:dev                            # cria/migra o schema
-npm run dev
+pnpm install
+pnpm run db:generate
+pnpm run db:migrate:dev                           # cria/migra o schema
+pnpm dev
 ```
 
 ### Produção (API + Postgres no Docker)
@@ -186,13 +190,16 @@ docker compose exec api npx prisma migrate deploy
 
 | Script | Descrição |
 |--------|-----------|
-| `npm run dev` | Sobe a API em modo watch (tsx) |
-| `npm run build` | Gera Prisma client e compila TypeScript |
-| `npm run start` | Roda a API compilada |
-| `npm run db:generate` | Gera o Prisma Client |
-| `npm run db:migrate` | Aplica migrations (deploy) |
-| `npm run db:migrate:dev` | Cria/aplica migrations em dev |
-| `npm run db:studio` | Abre o Prisma Studio |
+| `pnpm dev` | Sobe a API em modo watch (tsx) |
+| `pnpm build` | Gera Prisma client e compila TypeScript |
+| `pnpm start` | Roda a API compilada |
+| `pnpm run db:generate` | Gera o Prisma Client |
+| `pnpm run db:migrate` | Aplica migrations (deploy) |
+| `pnpm run db:migrate:dev` | Cria/aplica migrations em dev |
+| `pnpm run db:studio` | Abre o Prisma Studio |
+| `ppnpm run db:seed` | Cria usuário de dev (dev@localhost / dev123) |
+| `pnpm format` | Formata código com Prettier |
+| `pnpm run format:check` | Verifica formatação sem alterar |
 
 ---
 
@@ -220,8 +227,63 @@ No build, o `tsc-alias` reescreve esses aliases para caminhos relativos no `dist
 | `HOST` | Não | Host (default: 0.0.0.0) |
 | `JWT_SECRET` | Não | Segredo do JWT (default em dev) |
 | `DATABASE_URL` | Sim (para auth/users) | URL do Postgres (ex.: `postgresql://postgres:postgres@localhost:5432/yasapi`) |
+| `API_SECRET` | Não | Se definido, todas as requisições (exceto `/health`) devem enviar header `X-API-Key` com este valor |
 
-Sem `DATABASE_URL`, a API sobe, mas login e criação de conta não persistem (repositórios retornam null / não configurado).
+Sem `DATABASE_URL`, a API sobe, mas login e criação de conta não persistem.  
+Com `API_SECRET` definido, todas as requisições (exceto `GET /health`) devem enviar o header `X-API-Key` com o mesmo valor.
+
+---
+
+## Health check
+
+`GET /health` retorna:
+
+- **status:** `ok` ou `degraded` (degraded quando o DB está down).
+- **database:** `ok` | `down` | `unconfigured`.
+- **timestamp**, **version**.
+
+Resposta 200 quando tudo ok; 503 quando `database === 'down'`.
+
+---
+
+## Header X-API-Key (segurança)
+
+Se a variável `API_SECRET` estiver definida, a API exige o header **`X-API-Key`** em todas as requisições, com o mesmo valor. A rota `/health` é sempre isenta (para load balancers e probes).  
+Em desenvolvimento, deixe `API_SECRET` vazio para não exigir o header.
+
+---
+
+## Feature flags
+
+Em `core/config/features.ts`: flags por ambiente (ex.: `swagger` só em dev, `seedAllowed` em dev). Use para ligar/desligar Swagger, seeds ou outros comportamentos.
+
+---
+
+## Seed de desenvolvimento
+
+```bash
+pnpm run db:seed
+```
+
+Cria o usuário `dev@localhost` com senha `dev123` (se ainda não existir). Útil para login local sem cadastro manual.
+
+---
+
+## Lint, Prettier e Husky
+
+- **ESLint** (flat config em ESM: `eslint.config.mjs`) + **Prettier** para código consistente.
+- **Husky** + **lint-staged**: no `git commit`, rodam lint e formatação nos arquivos staged.
+
+Comandos: `pnpm lint`, `pnpm format`, `pnpm run format:check`. O projeto usa **pnpm** (`packageManager` no `package.json`); use `corepack enable` se ainda não tiver pnpm.
+
+---
+
+## GitHub Actions
+
+- **CI** (`.github/workflows/ci.yml`): em push/PR na `main`, roda lint, format check, typecheck e build.
+- **Deploy EC2** (`.github/workflows/deploy.yml`): em push na `main`, roda CI, envia o código por rsync para a EC2 e sobe com `docker-compose up --build -d`.
+
+Secrets no repositório: `EC2_KEY` (chave SSH privada), `EC2_HOST` (host da EC2). O deploy usa o diretório `/home/ec2-user/vida-br-api` na EC2; ajuste no workflow se usar outro path.
 
 ---
 

@@ -1,4 +1,4 @@
-# Desenvolvimento: sobe só o Postgres; a API roda local com npm run dev
+# Desenvolvimento: sobe só o Postgres; a API roda local com pnpm dev
 services:
   db:
     image: postgres:16-alpine

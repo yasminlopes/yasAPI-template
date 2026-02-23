@@ -1,6 +1,7 @@
 {
   "name": "yasapi-template",
   "version": "1.0.0",
+  "packageManager": "pnpm@9.15.0",
   "description": "Fastify + TypeScript API template - escalável e modular",
   "main": "dist/index.js",
   "scripts": {
@@ -11,8 +12,12 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "db:seed": "tsx prisma/seed.ts",
+    "lint": "eslint src prisma",
+    "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"prisma/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18"
@@ -34,6 +39,21 @@
     "prisma": "^5.22.0",
     "@types/node": "^22.9.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "eslint": "^9.15.0",
+    "@eslint/js": "^9.15.0",
+    "typescript-eslint": "^8.15.0",
+    "globals": "^15.12.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.10"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "lint-staged": {
+    "src/**/*.ts": ["eslint --fix", "prettier --write"],
+    "prisma/**/*.ts": ["prettier --write"]
   }
 }

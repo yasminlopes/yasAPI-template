@@ -3,8 +3,5 @@ import { env } from '@core/config';
 
 export const logger = pino({
   level: env.isDev ? 'debug' : 'info',
-  transport:
-    env.isDev
-      ? { target: 'pino-pretty', options: { colorize: true } }
-      : undefined,
+  transport: env.isDev ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
 });

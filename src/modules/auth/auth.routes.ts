@@ -20,7 +20,8 @@ export async function authRoutes(app: FastifyInstance) {
 
   /** Autenticado (exemplo): perfil do usuário logado */
   app.get('/me', { onRequest: [authMiddleware] }, async (request, reply) => {
-    const profile = await authService.getProfile(request.userId!);
+    const userId = (request as { userId?: string }).userId;
+    const profile = await authService.getProfile(userId!);
     if (!profile) throw new NotFoundError('Usuário não encontrado');
     return sendOk(reply, profile);
   });

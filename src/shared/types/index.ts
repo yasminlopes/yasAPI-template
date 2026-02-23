@@ -1,1 +1,1 @@
-// Tipos globais em global.d.ts (ambient). Exporte tipos compartilhados aqui.
+// Tipos compartilhados entre módulos (se necessário). Por padrão, cada módulo tem seus próprios tipos/dto.

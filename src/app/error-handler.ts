@@ -1,10 +1,14 @@
-import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AppError } from '@core/http/errors';
 import { HttpStatus } from '@shared/enums';
 import { sendError } from '@core/http/response';
 
+interface ValidationError extends Error {
+  validation?: unknown[];
+}
+
 export async function errorHandler(
-  error: FastifyError | AppError,
+  error: Error | AppError,
   request: FastifyRequest,
   reply: FastifyReply
 ) {
@@ -12,7 +16,8 @@ export async function errorHandler(
     return sendError(reply, error.statusCode, error.message, error.code);
   }
 
-  if (error.validation) {
+  const err = error as ValidationError;
+  if (err.validation) {
     return sendError(
       reply,
       HttpStatus.BadRequest,
@@ -22,9 +27,5 @@ export async function errorHandler(
   }
 
   request.log.error(error);
-  return sendError(
-    reply,
-    (error as FastifyError).statusCode ?? HttpStatus.InternalServerError,
-    'Internal server error'
-  );
+  return sendError(reply, HttpStatus.InternalServerError, 'Internal server error');
 }

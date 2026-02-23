@@ -1,0 +1,56 @@
+name: Deploy para EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Instala chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Envia código para EC2
+        run: |
+          rsync -avz --exclude node_modules --exclude dist --exclude .env --exclude .git -e "ssh -i ~/.ssh/id_rsa" ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/vida-br-api
+
+      - name: Roda docker-compose na EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ec2-user/vida-br-api
+            docker-compose down
+            docker-compose up --build -d
+          EOF

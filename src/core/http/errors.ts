@@ -15,7 +15,8 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = 'AppError';
-    this.code = code ?? HttpErrorCode[statusCode as keyof typeof HttpErrorCode] ?? 'InternalServerError';
+    this.code =
+      code ?? HttpErrorCode[statusCode as keyof typeof HttpErrorCode] ?? 'InternalServerError';
     Object.setPrototypeOf(this, AppError.prototype);
   }
 }

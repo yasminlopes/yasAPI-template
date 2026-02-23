@@ -9,7 +9,9 @@ export interface UserEntity {
 }
 
 export const usersRepository = {
-  async create(data: Omit<UserEntity, 'id' | 'createdAt'> & { passwordHash: string }): Promise<UserEntity> {
+  async create(
+    data: Omit<UserEntity, 'id' | 'createdAt'> & { passwordHash: string }
+  ): Promise<UserEntity> {
     if (!hasDatabase()) throw new Error('Database not configured');
     const prisma = getPrisma();
     const user = await prisma.user.create({

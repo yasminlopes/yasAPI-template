@@ -3,13 +3,9 @@ import { HttpStatus, HttpErrorCode } from '@shared/enums';
 import type { PaginatedResult } from '@shared/helpers/pagination';
 
 /** Resposta de erro estilo AWS: { error: { code, message, statusCode } } */
-export function sendError(
-  reply: FastifyReply,
-  statusCode: number,
-  message: string,
-  code?: string
-) {
-  const errorCode = code ?? HttpErrorCode[statusCode as keyof typeof HttpErrorCode] ?? 'InternalServerError';
+export function sendError(reply: FastifyReply, statusCode: number, message: string, code?: string) {
+  const errorCode =
+    code ?? HttpErrorCode[statusCode as keyof typeof HttpErrorCode] ?? 'InternalServerError';
   return reply.status(statusCode).send({
     error: {
       code: errorCode,
